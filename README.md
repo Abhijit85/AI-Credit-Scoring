@@ -20,7 +20,7 @@ How a Credit Score Is Generated
 
 
 
-![Alt text](Credit Solution.png)
+![Credit Score Flow](Credit%20Solution.png)
 
 
 
