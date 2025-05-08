@@ -9,15 +9,19 @@ This is a full-stack AI-powered credit scoring system built with:
 
 ## Features
 
-- 🧠 AI-generated credit score and breakdown
-- 📊 Visual sliders and tabbed UI
-- 💬 LLM-generated risk summary and suggestions
-- 📁 Modular FastAPI backend
+- AI-generated credit score and breakdown
+- Visual sliders and tabbed UI
+- LLM-generated risk summary and suggestions
+- Modular FastAPI backend
 
 ## Architecture
 
 ```
 User Input → React UI → FastAPI (/score) → Rule-based + GPT scoring → JSON → UI rendering
+How a Credit Score Is Generated
+
+![Credit Score Flow](./assets/credit-score-flow.png)
+
 ```
 
 ## Running Locally
