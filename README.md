@@ -16,13 +16,12 @@ This is a full-stack AI-powered credit scoring system built with:
 
 ## Architecture
 
-```
 User Input → React UI → FastAPI (/score) → Rule-based + GPT scoring → JSON → UI rendering
 How a Credit Score Is Generated
 
 ![Credit Score Flow](Credit Solution.png)
 
-```
+
 
 ## Running Locally
 
