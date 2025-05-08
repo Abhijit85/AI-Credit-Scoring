@@ -15,12 +15,13 @@ This is a full-stack AI-powered credit scoring system built with:
 - Modular FastAPI backend
 
 ## Architecture
-```bash
 User Input → React UI → FastAPI (/score) → Rule-based + GPT scoring → JSON → UI rendering
 How a Credit Score Is Generated
 
-Credit Solution.png
-```
+
+
+![Alt text](Credit Solution.png)
+
 
 
 ## Running Locally
