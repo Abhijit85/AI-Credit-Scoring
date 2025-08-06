@@ -39,7 +39,9 @@ uvicorn main:app --reload
 ```bash
 cd ai-credit-scoring-app/frontend
 npm install
-npm start
+npm run dev   # start development server
+npm run build # create production build
+npm start     # preview production build
 ```
 
 Visit: http://localhost:5173/

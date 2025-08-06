@@ -59,9 +59,9 @@ export default function CreditScoringApp() {
   const sliderFields = ['Outstanding_Debt', 'Num_Credit_Card', 'Num_Bank_Accounts', 'Total_EMI_per_month', 'Monthly_Inhand_Salary', 'Num_of_Delayed_Payment'];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen bg-white">
+    <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100">
       {/* Left Panel with Image */}
-      <div className="bg-gray-100 flex items-center justify-center p-6">
+      <div className="bg-gradient-to-br from-green-600 to-green-400 flex items-center justify-center p-6">
         <img src="/credit-banner.png" alt="Credit Visual" className="max-w-full max-h-full rounded-xl shadow-xl" />
       </div>
 
@@ -96,7 +96,12 @@ export default function CreditScoringApp() {
             </div>
           ))}
           <div className="md:col-span-2 flex justify-center">
-            <button type="submit" className="bg-green-600 text-white px-8 py-3 rounded hover:bg-green-700 shadow-md">Save Profile</button>
+            <button
+              type="submit"
+              className="bg-green-600 text-white px-8 py-3 rounded shadow-md hover:bg-green-700 transition-colors duration-200"
+            >
+              Save Profile
+            </button>
           </div>
         </form>
 
@@ -111,8 +116,18 @@ export default function CreditScoringApp() {
         )}
 
         <div className="flex justify-center space-x-6 mb-8">
-          <button className={`px-4 py-2 rounded ${activeTab === 'status' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`} onClick={() => setActiveTab('status')}>Status explanation</button>
-          <button className={`px-4 py-2 rounded ${activeTab === 'products' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`} onClick={() => setActiveTab('products')}>Product recommendations</button>
+          <button
+            className={`px-4 py-2 rounded shadow transition-colors duration-200 ${activeTab === 'status' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            onClick={() => setActiveTab('status')}
+          >
+            Status explanation
+          </button>
+          <button
+            className={`px-4 py-2 rounded shadow transition-colors duration-200 ${activeTab === 'products' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            onClick={() => setActiveTab('products')}
+          >
+            Product recommendations
+          </button>
         </div>
 
         {activeTab === 'status' && (
