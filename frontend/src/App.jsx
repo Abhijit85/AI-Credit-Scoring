@@ -17,6 +17,8 @@ export default function CreditScoringApp() {
   const [recommendations, setRecommendations] = useState([]);
   const [summary, setSummary] = useState('');
   const [vectorProducts, setVectorProducts] = useState([]);
+  const [anomalyScore, setAnomalyScore] = useState(null);
+  const ANOMALY_THRESHOLD = 0.7;
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -33,6 +35,7 @@ export default function CreditScoringApp() {
       const res = await axios.post('http://localhost:8000/score', formData);
       const result = res.data;
       setCreditScore(result.credit_score_estimate);
+      setAnomalyScore(result.anomaly_score ?? result.fraud_risk ?? null);
       setScoreBreakdown({
         repayment: result.repayment || 0,
         utilization: result.utilization || 0,
@@ -113,6 +116,17 @@ export default function CreditScoringApp() {
           <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
             Credit Health Status : <span className="bg-green-100 text-green-700 px-4 py-1 rounded-full ml-2">APPROVED</span>
           </h2>
+        )}
+
+        {anomalyScore !== null && (
+          <>
+            <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
+              Fraud Risk: <span className={`px-4 py-1 rounded-full ml-2 ${anomalyScore > ANOMALY_THRESHOLD ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{anomalyScore.toFixed(2)}</span>
+            </h2>
+            {anomalyScore > ANOMALY_THRESHOLD && (
+              <p className="text-center text-red-700 mb-4">⚠️ High anomaly score detected</p>
+            )}
+          </>
         )}
 
         <div className="flex justify-center space-x-6 mb-8">
