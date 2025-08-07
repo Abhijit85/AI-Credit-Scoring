@@ -1,6 +1,6 @@
 fastapi
 uvicorn
-openai
+boto3
 pydantic
 python-dotenv
 boto3
