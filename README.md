@@ -3,7 +3,8 @@
 
 This is a full-stack AI-powered credit scoring system built with:
 - **FastAPI** (backend)
-- **OpenAI GPT-4** for LLM risk summarization
+- **AWS Bedrock** for LLM risk summarization
+- **AWS Fraud Detector or Amazon SageMaker** for anomaly detection
 - **React** (frontend with TailwindCSS and lucide-react)
 - **MongoDB** (recommended for storage and optional vector indexing)
 
@@ -12,10 +13,11 @@ This is a full-stack AI-powered credit scoring system built with:
 - AI-generated credit score and breakdown
 - Visual sliders and tabbed UI
 - LLM-generated risk summary and suggestions
+- Anomaly detection service for suspicious applications
 - Modular FastAPI backend
 
 ## Architecture
-User Input → React UI → FastAPI (/score) → Rule-based + GPT scoring → JSON → UI rendering
+User Input → React UI → FastAPI (/score) → Rule-based scoring + Bedrock LLM + Anomaly detection → JSON → UI rendering
 How a Credit Score Is Generated
 
 
@@ -26,20 +28,50 @@ How a Credit Score Is Generated
 
 ![Architectural Diagram](MDB-ARCH-DIAGRAMS-AI-Credit-Scoring-Bedrock-Lab.drawio.png)
 
-## Running Locally
+## AWS Configuration
+
+Before running the application, configure AWS access and model settings.
+
+1. Install the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and run `aws configure` or set environment variables.
+
+```bash
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_REGION=us-east-1
+```
+
+2. Enable [Amazon Bedrock](https://aws.amazon.com/bedrock/) and choose a model:
+
+```bash
+BEDROCK_MODEL_ID=anthropic.claude-v2
+```
+
+3. Deploy an anomaly detection service using [AWS Fraud Detector](https://aws.amazon.com/fraud-detector/) or a [SageMaker](https://aws.amazon.com/sagemaker/) endpoint and capture its identifier:
+
+```bash
+FRAUD_DETECTOR_MODEL_ARN=arn:aws:frauddetector:us-east-1:123456789012:detector/my-detector   # if using Fraud Detector
+SAGEMAKER_ENDPOINT_NAME=my-anomaly-endpoint                                                   # if using SageMaker
+```
+
+4. Include additional application variables such as the MongoDB connection string:
+
+```bash
+MONGODB_URI=mongodb://localhost:27017
+```
+
+Store these values in a `.env` file in `backend` or export them in your shell.
 
 ### Backend
 ```bash
-cd ai-credit-scoring-app/backend
-cp .env.example .env
-# Add your OpenAI key in .env
+cd backend
+# create .env and add the variables described above
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
 ### Frontend
 ```bash
-cd ai-credit-scoring-app/frontend
+cd frontend
 npm install
 npm run dev   # start development server
 npm run build # create production build
