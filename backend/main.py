@@ -1,15 +1,27 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from openai import OpenAI
+import boto3
+import json
 import os
+import json
+import boto3
 from dotenv import load_dotenv
 from pymongo import MongoClient
-# from openai.embeddings_utils import get_embedding
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+AWS_REGION = os.getenv("AWS_REGION")
+TEXT_MODEL_ID = os.getenv("BEDROCK_TEXT_MODEL_ID")
+EMBED_MODEL_ID = os.getenv("BEDROCK_EMBED_MODEL_ID")
+
+bedrock_client = boto3.client(
+    "bedrock-runtime",
+    region_name=AWS_REGION,
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    aws_session_token=os.getenv("AWS_SESSION_TOKEN"),
+)
 mongo_client = MongoClient(os.getenv("MONGODB_URI"))
 db = mongo_client["bfsi-genai"]
 collection = db["user_profiles"]
@@ -46,6 +58,41 @@ class CreditInput(BaseModel):
 class QueryDescription(BaseModel):
     description: str
 
+
+def invoke_scoring_service(profile: dict, service: str = os.getenv("MODEL_SERVICE", "frauddetector")):
+    """Send profile data to the configured AWS service and return the result."""
+    try:
+        if service == "frauddetector":
+            fd = boto3.client("frauddetector")
+            response = fd.get_event_prediction(
+                detectorId=os.getenv("FRAUD_DETECTOR_NAME"),
+                eventId=profile.get("Name", "event"),
+                eventTypeName=os.getenv("FRAUD_DETECTOR_EVENT_TYPE"),
+                eventVariables={k: str(v) for k, v in profile.items()},
+            )
+            model_scores = response.get("modelScores", [])
+            score = None
+            if model_scores:
+                scores = model_scores[0].get("scores", {})
+                score = scores.get("anomalyScore") or next(iter(scores.values()), None)
+            return {"anomaly_score": score}
+        elif service == "sagemaker-runtime":
+            sm = boto3.client("sagemaker-runtime")
+            response = sm.invoke_endpoint(
+                EndpointName=os.getenv("SAGEMAKER_ENDPOINT_NAME"),
+                ContentType="application/json",
+                Body=json.dumps(profile),
+            )
+            body = response["Body"].read()
+            try:
+                payload = json.loads(body)
+            except Exception:
+                payload = body.decode("utf-8")
+            return {"recommendation": payload}
+    except Exception as e:
+        return {"service_error": str(e)}
+    return {}
+
 @app.post("/score")
 def score_credit(input: CreditInput):
     try:
@@ -69,15 +116,25 @@ def score_credit(input: CreditInput):
         """
 
         try:
-            gpt_response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a credit analyst helping users understand their credit risk."},
-                    {"role": "user", "content": summary_prompt}
-                ],
-                max_tokens=200
+            body = json.dumps(
+                {
+                    "anthropic_version": "bedrock-2023-05-31",
+                    "max_tokens": 200,
+                    "system": "You are a credit analyst helping users understand their credit risk.",
+                    "messages": [{"role": "user", "content": summary_prompt}],
+                }
             )
-            explanation = gpt_response.choices[0].message.content.strip()
+            response = bedrock_client.invoke_model(
+                modelId=TEXT_MODEL_ID,
+                contentType="application/json",
+                accept="application/json",
+                body=body,
+            )
+            status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+            if status_code != 200:
+                raise Exception(f"Bedrock invocation failed with status code {status_code}")
+            response_body = json.loads(response["body"].read())
+            explanation = response_body["content"][0]["text"].strip()
         except Exception as e:
             explanation = f"LLM summary failed: {str(e)}"
 
@@ -98,6 +155,9 @@ def score_credit(input: CreditInput):
             "summary": explanation,
             "recommendations": recommendations
         })
+
+        service_result = invoke_scoring_service(record)
+        record.update(service_result)
         print("Inserting into MongoDB:", record)
 
         collection.insert_one(record)
@@ -109,7 +169,8 @@ def score_credit(input: CreditInput):
             "outstanding": int(outstanding),
             "inquiries": int(inquiries),
             "summary": explanation,
-            "recommendations": recommendations or ["Maintain current credit habits for gradual improvement."]
+            "recommendations": recommendations or ["Maintain current credit habits for gradual improvement."],
+            **service_result,
         }
     except Exception as e:
         return {"error": f"Something went wrong: {str(e)}"}
@@ -117,7 +178,20 @@ def score_credit(input: CreditInput):
 @app.post("/similar_products")
 def similar_products(query: QueryDescription):
     try:
-        embedding = client.embeddings.create(input=query.description, model="text-embedding-ada-002").data[0].embedding
+        embed_body = json.dumps({"inputText": query.description})
+        response = bedrock_client.invoke_model(
+            modelId=EMBED_MODEL_ID,
+            contentType="application/json",
+            accept="application/json",
+            body=embed_body,
+        )
+        status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+        if status_code != 200:
+            raise Exception(f"Bedrock invocation failed with status code {status_code}")
+        response_body = json.loads(response["body"].read())
+        embedding = response_body.get("embedding")
+        if embedding is None:
+            raise Exception("No embedding returned from Bedrock")
 
         results = products.aggregate([
             {
@@ -142,3 +216,4 @@ def similar_products(query: QueryDescription):
         return {"results": list(results)}
     except Exception as e:
         return {"error": f"Vector search failed: {str(e)}"}
+

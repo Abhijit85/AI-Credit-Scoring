@@ -40,8 +40,19 @@ Ensure the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-st
 
 ### Backend
 ```bash
+codex/update-readme-for-aws-bedrock-integration
 cd backend
 # create .env and add the variables above
+=======
+cd ai-credit-scoring-app/backend
+cp .env.example .env
+# Add your OpenAI key in .env
+# Configure AWS services via environment variables
+# MODEL_SERVICE=frauddetector|sagemaker-runtime
+# FRAUD_DETECTOR_NAME=your-detector
+# FRAUD_DETECTOR_EVENT_TYPE=your-event-type
+# SAGEMAKER_ENDPOINT_NAME=your-endpoint
+# main
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
