@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from openai import OpenAI
 import os
+import json
+import boto3
 from dotenv import load_dotenv
 from pymongo import MongoClient
 # from openai.embeddings_utils import get_embedding
@@ -45,6 +47,41 @@ class CreditInput(BaseModel):
 
 class QueryDescription(BaseModel):
     description: str
+
+
+def invoke_scoring_service(profile: dict, service: str = os.getenv("MODEL_SERVICE", "frauddetector")):
+    """Send profile data to the configured AWS service and return the result."""
+    try:
+        if service == "frauddetector":
+            fd = boto3.client("frauddetector")
+            response = fd.get_event_prediction(
+                detectorId=os.getenv("FRAUD_DETECTOR_NAME"),
+                eventId=profile.get("Name", "event"),
+                eventTypeName=os.getenv("FRAUD_DETECTOR_EVENT_TYPE"),
+                eventVariables={k: str(v) for k, v in profile.items()},
+            )
+            model_scores = response.get("modelScores", [])
+            score = None
+            if model_scores:
+                scores = model_scores[0].get("scores", {})
+                score = scores.get("anomalyScore") or next(iter(scores.values()), None)
+            return {"anomaly_score": score}
+        elif service == "sagemaker-runtime":
+            sm = boto3.client("sagemaker-runtime")
+            response = sm.invoke_endpoint(
+                EndpointName=os.getenv("SAGEMAKER_ENDPOINT_NAME"),
+                ContentType="application/json",
+                Body=json.dumps(profile),
+            )
+            body = response["Body"].read()
+            try:
+                payload = json.loads(body)
+            except Exception:
+                payload = body.decode("utf-8")
+            return {"recommendation": payload}
+    except Exception as e:
+        return {"service_error": str(e)}
+    return {}
 
 @app.post("/score")
 def score_credit(input: CreditInput):
@@ -98,6 +135,9 @@ def score_credit(input: CreditInput):
             "summary": explanation,
             "recommendations": recommendations
         })
+
+        service_result = invoke_scoring_service(record)
+        record.update(service_result)
         print("Inserting into MongoDB:", record)
 
         collection.insert_one(record)
@@ -109,7 +149,8 @@ def score_credit(input: CreditInput):
             "outstanding": int(outstanding),
             "inquiries": int(inquiries),
             "summary": explanation,
-            "recommendations": recommendations or ["Maintain current credit habits for gradual improvement."]
+            "recommendations": recommendations or ["Maintain current credit habits for gradual improvement."],
+            **service_result,
         }
     except Exception as e:
         return {"error": f"Something went wrong: {str(e)}"}
