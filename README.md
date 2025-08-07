@@ -19,10 +19,12 @@ User Input → React UI → FastAPI (/score) → Rule-based + GPT scoring → JS
 How a Credit Score Is Generated
 
 
-
+### Flow Diagram
 ![Credit Score Flow](Credit%20Solution.png)
 
+### Architectural Diagram
 
+![Architectural Diagram](MDB-ARCH-DIAGRAMS-AI-Credit-Scoring-Bedrock-Lab.drawio.png)
 
 ## Running Locally
 
