@@ -3,3 +3,7 @@ uvicorn
 openai
 pydantic
 python-dotenv
+boto3
+awscli
+botocore
+sagemaker
