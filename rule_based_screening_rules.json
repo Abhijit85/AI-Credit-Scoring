@@ -1,0 +1,124 @@
+{
+  "RuleBasedScreeningRules": [
+    {
+      "category": "Identity and Input Consistency",
+      "rules": [
+        {
+          "name": "Minimum Age Check",
+          "description": "Reject if age < 18 years",
+          "condition": "age < 18",
+          "action": "reject"
+        },
+        {
+          "name": "SSN/ID Format Validation",
+          "description": "Ensure SSN follows the format XXX-XX-XXXX",
+          "condition": "not matches_regex(ssn, '^\\d{3}-\\d{2}-\\d{4}$')",
+          "action": "reject"
+        },
+        {
+          "name": "Name-DOB Mismatch",
+          "description": "Check for inconsistencies between name and date of birth",
+          "condition": "name_dob_mismatch == True",
+          "action": "flag"
+        }
+      ]
+    },
+    {
+      "category": "Employment and Income Validation",
+      "rules": [
+        {
+          "name": "Minimum Employment Duration",
+          "description": "Reject if employment duration < 6 months",
+          "condition": "employment_duration_months < 6",
+          "action": "reject"
+        },
+        {
+          "name": "Income Threshold",
+          "description": "Reject if annual income < $12,000 unless marked as student or dependent",
+          "condition": "income < 12000 and not is_student_or_dependent",
+          "action": "reject"
+        },
+        {
+          "name": "Job Role Plausibility",
+          "description": "Flag if job title does not align with claimed income",
+          "condition": "job_title == 'Intern' and income > 100000",
+          "action": "flag"
+        }
+      ]
+    },
+    {
+      "category": "Credit and Financial Behavior",
+      "rules": [
+        {
+          "name": "Existing Loan Count Check",
+          "description": "Reject if number of existing active loans > 5",
+          "condition": "active_loans > 5",
+          "action": "reject"
+        },
+        {
+          "name": "Debt-to-Income Ratio",
+          "description": "Flag if DTI > 45%",
+          "condition": "debt_to_income_ratio > 0.45",
+          "action": "flag"
+        },
+        {
+          "name": "Bank Account Age",
+          "description": "Reject if bank account age < 3 months",
+          "condition": "bank_account_age_months < 3",
+          "action": "reject"
+        }
+      ]
+    },
+    {
+      "category": "Geographical and Risk Zone Flags",
+      "rules": [
+        {
+          "name": "High-risk ZIP Codes",
+          "description": "Flag if ZIP code is in high-fraud or high-default region",
+          "condition": "zip_code in high_risk_zip_codes",
+          "action": "flag"
+        },
+        {
+          "name": "IP vs Address Mismatch",
+          "description": "Flag if IP geolocation doesn\u2019t match declared address",
+          "condition": "ip_location != declared_address_location",
+          "action": "flag"
+        }
+      ]
+    },
+    {
+      "category": "Behavioral Rules",
+      "rules": [
+        {
+          "name": "Form Completion Speed",
+          "description": "Reject if form was filled unusually fast",
+          "condition": "form_completion_time_seconds < 30",
+          "action": "reject"
+        },
+        {
+          "name": "Repeated Submissions",
+          "description": "Flag if same user submits multiple applications in short time",
+          "condition": "submission_count_24h > 1",
+          "action": "flag"
+        }
+      ]
+    },
+    {
+      "category": "Data Completeness & Cross-check",
+      "rules": [
+        {
+          "name": "Mandatory Fields Present",
+          "description": "Ensure all critical fields are present",
+          "condition": "missing_fields != []",
+          "action": "reject"
+        },
+        {
+          "name": "Cross-field Validation",
+          "description": "Reject if declared 'unemployed' with income > $5000",
+          "condition": "employment_status == 'unemployed' and income > 5000",
+          "action": "reject"
+        }
+      ]
+    }
+  ]
+}
