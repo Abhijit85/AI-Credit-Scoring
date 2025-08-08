@@ -99,6 +99,31 @@ MONGODB_URI=mongodb://localhost:27017
 
 Store these values in a `.env` file in `backend` or export them in your shell.
 
+### Bedrock (Claude 3.5 Haiku) via Inference Profile
+
+Some Anthropic models (e.g., **Claude 3.5 Haiku**) cannot be invoked on-demand with a plain `modelId`.
+You **must** call them via an **inference profile**. Configure env like this:
+
+```bash
+# Do NOT set BEDROCK_TEXT_MODEL_ID for Haiku
+export BEDROCK_TEXT_INFERENCE_PROFILE_ID=us.anthropic.claude-3-5-haiku-20241022-v1:0
+export BEDROCK_TEXT_REGION=us-west-2
+```
+
+Or use the full ARN:
+```bash
+export BEDROCK_TEXT_INFERENCE_PROFILE_ARN=arn:aws:bedrock:us-east-1:<acct>:inference-profile/us.anthropic.claude-3-5-haiku-20241022-v1:0
+```
+
+If you use an on-demand model (not requiring profiles), configure:
+```bash
+export BEDROCK_TEXT_MODEL_ID=anthropic.claude-v2:1
+```
+
+The runtime automatically prefers the inference profile if set; otherwise it falls back to `modelId`.
+If none are set, the service will raise a clear configuration error at call time.
+
+
 ### Backend
 ```bash
 cd backend
