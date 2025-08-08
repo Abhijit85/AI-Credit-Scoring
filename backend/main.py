@@ -8,6 +8,7 @@ import json
 import boto3
 from dotenv import load_dotenv
 from pymongo import MongoClient
+from validators import evaluate_rules
 
 load_dotenv()
 
@@ -95,6 +96,17 @@ def invoke_scoring_service(profile: dict, service: str = os.getenv("MODEL_SERVIC
 
 @app.post("/score")
 def score_credit(input: CreditInput):
+    profile = input.dict()
+    screening = evaluate_rules(profile)
+    if screening["status"] == "reject":
+        return {
+            "status": "rejected",
+            "reason": screening["rule"],
+            "description": screening["description"],
+        }
+    if screening["flags"]:
+        return {"status": "flagged", "flags": screening["flags"]}
+
     try:
         repayment = max(0, 30 - int(input.Num_of_Delayed_Payment) - int(input.Delay_from_due_date) // 10)
         utilization = max(0, 30 - float(input.Credit_Utilization_Ratio) // 3)
@@ -145,7 +157,7 @@ def score_credit(input: CreditInput):
         ]
         recommendations = [r for r in recommendations if r]
 
-        record = input.dict()
+        record = profile.copy()
         record.update({
             "credit_score": round(credit_score),
             "repayment": int(repayment),
@@ -163,6 +175,7 @@ def score_credit(input: CreditInput):
         collection.insert_one(record)
 
         return {
+            "status": "ok",
             "credit_score_estimate": round(credit_score),
             "repayment": int(repayment),
             "utilization": int(utilization),
