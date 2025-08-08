@@ -65,7 +65,7 @@ export default function CreditScoringApp() {
     <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100">
       {/* Left Panel with Image */}
       <div className="bg-gradient-to-br from-green-600 to-green-400 flex items-center justify-center p-6">
-        <img src="/credit-banner.png" alt="Credit Visual" className="max-w-full max-h-full rounded-xl shadow-xl" />
+        <img src="/credit-card-image.jpg" alt="Credit Visual" className="max-w-full max-h-full rounded-xl shadow-xl" />
       </div>
 
       {/* Right Panel with Form and Dashboard */}
