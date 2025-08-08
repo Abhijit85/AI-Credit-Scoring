@@ -28,14 +28,23 @@ User Input → React UI → FastAPI (/score) → Rule-based scoring + Bedrock LL
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_REGION=us-east-1
-BEDROCK_TEXT_MODEL_ID=anthropic.claude-v2
-BEDROCK_TEXT_INFERENCE_PROFILE_ARN=arn:aws:bedrock:REGION:ACCOUNT_ID:inference-profile/my-text-profile
-BEDROCK_EMBED_MODEL_ID=amazon.titan-embed-text-v1
-BEDROCK_EMBED_INFERENCE_PROFILE_ARN=arn:aws:bedrock:REGION:ACCOUNT_ID:inference-profile/my-embed-profile
+
+# Region hosting the text inference profile
+BEDROCK_TEXT_REGION=us-west-2
+
+# Provide one of the following for the profile
+BEDROCK_TEXT_INFERENCE_PROFILE_ARN=arn:aws:bedrock:us-west-2:ACCOUNT_ID:inference-profile/my-text-profile
+BEDROCK_TEXT_INFERENCE_PROFILE_ID=ip-1234567890abcdef
+
+# Optional embedding profile
+BEDROCK_EMBED_REGION=us-west-2
+BEDROCK_EMBED_INFERENCE_PROFILE_ARN=arn:aws:bedrock:us-west-2:ACCOUNT_ID:inference-profile/my-embed-profile
 FRAUD_DETECTOR_MODEL_ARN=arn:aws:frauddetector:us-east-1:123456789012:detector/my-detector   # if using Fraud Detector
 SAGEMAKER_ENDPOINT_NAME=my-anomaly-endpoint                                                   # if using SageMaker
 MONGODB_URI=mongodb://localhost:27017
 ```
+
+The backend uses cross-region inference through the configured inference profile and omits any `modelId` from requests.
 
 Ensure the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) is configured or the above variables are exported.
 
@@ -43,19 +52,8 @@ Ensure the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-st
 
 ### Backend
 ```bash
-codex/update-readme-for-aws-bedrock-integration
 cd backend
 # create .env and add the variables above
-=======
-cd ai-credit-scoring-app/backend
-cp .env.example .env
-# Add your OpenAI key in .env
-# Configure AWS services via environment variables
-# MODEL_SERVICE=frauddetector|sagemaker-runtime
-# FRAUD_DETECTOR_NAME=your-detector
-# FRAUD_DETECTOR_EVENT_TYPE=your-event-type
-# SAGEMAKER_ENDPOINT_NAME=your-endpoint
-# main
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
@@ -64,8 +62,10 @@ uvicorn main:app --reload
 ```bash
 cd frontend
 npm install
-npm start
+npm run dev   # start development server
+npm run build # create production build
+npm start     # preview production build
 ```
 
-Visit: http://localhost:3000
+Visit: http://localhost:5173/
 
