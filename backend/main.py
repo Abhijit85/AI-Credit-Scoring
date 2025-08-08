@@ -4,8 +4,6 @@ from pydantic import BaseModel
 import boto3
 import json
 import os
-import json
-import boto3
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from validators import evaluate_rules
@@ -39,6 +37,7 @@ def read_root():
 
 class CreditInput(BaseModel):
     Name: str
+    ssn: str
     Age: str
     Occupation: str
     Annual_Income: str
@@ -97,7 +96,9 @@ def invoke_scoring_service(profile: dict, service: str = os.getenv("MODEL_SERVIC
 @app.post("/score")
 def score_credit(input: CreditInput):
     profile = input.dict()
+    profile["missing_fields"] = [k for k, v in profile.items() if v in (None, "")]
     screening = evaluate_rules(profile)
+    profile.pop("missing_fields", None)
     if screening["status"] == "reject":
         return {
             "status": "rejected",
