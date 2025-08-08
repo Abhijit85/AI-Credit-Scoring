@@ -34,6 +34,12 @@ export default function CreditScoringApp() {
     try {
       const res = await axios.post('http://localhost:8000/score', formData);
       const result = res.data;
+      if (result.status === 'rejected' || result.status === 'flagged') {
+        const reason = result.description || result.reason || (result.flags ? result.flags.join(', ') : 'No details provided');
+        alert(`${result.status === 'rejected' ? 'Application rejected' : 'Application flagged'}: ${reason}`);
+        return;
+      }
+
       setCreditScore(result.credit_score_estimate);
       setAnomalyScore(result.anomaly_score ?? result.fraud_risk ?? null);
       setScoreBreakdown({
