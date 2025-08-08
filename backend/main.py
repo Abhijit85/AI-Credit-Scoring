@@ -148,17 +148,22 @@ def score_credit(input: CreditInput):
                 invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
             elif TEXT_INFERENCE_PROFILE_ID and "inferenceProfileId" in members:
                 invoke_kwargs["inferenceProfileId"] = TEXT_INFERENCE_PROFILE_ID
+ 3mbfqo-codex/fix-model-invocation-with-on-demand-throughput
+=======
 4xgegp-codex/fix-model-invocation-with-on-demand-throughput
+ main
             else:
                 raise Exception("Bedrock inference profile not configured")
             if TEXT_REGION and "targetModelRegion" in members:
-                invoke_kwargs["targetModelRegion"] = TEXT_REGION
+ 3mbfqo-codex/fix-model-invocation-with-on-demand-throughput
+=======
 
             elif TEXT_MODEL_ID:
                 invoke_kwargs["modelId"] = TEXT_MODEL_ID
             else:
                 raise Exception("Bedrock model or inference profile not configured")
 main
+ main
             response = bedrock_client.invoke_model(**invoke_kwargs)
             status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
@@ -232,17 +237,22 @@ def similar_products(query: QueryDescription):
             invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
         elif TEXT_INFERENCE_PROFILE_ID and "inferenceProfileId" in members:
             invoke_kwargs["inferenceProfileId"] = TEXT_INFERENCE_PROFILE_ID
+ 3mbfqo-codex/fix-model-invocation-with-on-demand-throughput
+=======
         4xgegp-codex/fix-model-invocation-with-on-demand-throughput
+ main
         else:
             raise Exception("Bedrock inference profile not configured")
         if TEXT_REGION and "targetModelRegion" in members:
             invoke_kwargs["targetModelRegion"] = TEXT_REGION
+ 3mbfqo-codex/fix-model-invocation-with-on-demand-throughput
+=======
 
         elif TEXT_MODEL_ID:
             invoke_kwargs["modelId"] = TEXT_MODEL_ID
         else:
             raise Exception("Bedrock model or inference profile not configured")
-        main
+ main
 
         response = bedrock_client.invoke_model(**invoke_kwargs)
         status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")

@@ -40,7 +40,10 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_REGION=us-east-1
 ```
 
+3mbfqo-codex/fix-model-invocation-with-on-demand-throughput
+=======
 4xgegp-codex/fix-model-invocation-with-on-demand-throughput
+ main
 2. Enable [Amazon Bedrock](https://aws.amazon.com/bedrock/) and configure cross-region inference with an inference profile:
 
 ```bash
@@ -54,6 +57,11 @@ BEDROCK_TEXT_INFERENCE_PROFILE_ID=ip-1234567890abcdef
 # Optional embedding profile
 BEDROCK_EMBED_REGION=us-west-2
 BEDROCK_EMBED_INFERENCE_PROFILE_ARN=arn:aws:bedrock:us-west-2:ACCOUNT_ID:inference-profile/my-embed-profile
+ 3mbfqo-codex/fix-model-invocation-with-on-demand-throughput
+```
+
+When an inference profile variable is set, the backend uses cross-region inference and omits the `modelId` in Bedrock requests.
+=======
 ```
 
 When an inference profile variable is set, the backend uses cross-region inference and omits the `modelId` in Bedrock requests.
@@ -74,6 +82,7 @@ BEDROCK_EMBED_INFERENCE_PROFILE_ARN=arn:aws:bedrock:REGION:ACCOUNT_ID:inference-
 
 When an inference profile environment variable is provided, the backend uses it and does not send the `modelId` in the Bedrock request.
 main
+ main
 
 3. Deploy an anomaly detection service using [AWS Fraud Detector](https://aws.amazon.com/fraud-detector/) or a [SageMaker](https://aws.amazon.com/sagemaker/) endpoint and capture its identifier:
 
