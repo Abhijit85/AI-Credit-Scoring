@@ -4,7 +4,7 @@ import { CreditCard, Banknote, BarChart, TrendingUp } from 'lucide-react';
 
 export default function CreditScoringApp() {
   const [formData, setFormData] = useState({
-    Name: 'Test User', Age: '30', Occupation: 'Engineer', Annual_Income: '16000',
+    Name: 'Test User', ssn: '123-45-6789', Age: '30', Occupation: 'Engineer', Annual_Income: '16000',
     Monthly_Inhand_Salary: '1787', Num_Bank_Accounts: '4', Num_Credit_Card: '5',
     Interest_Rate: '25', Num_of_Loan: '2', Type_of_Loan: 'Home Loan',
     Delay_from_due_date: '2', Num_of_Delayed_Payment: '7', Credit_Mix: 'Fair',
@@ -75,7 +75,7 @@ export default function CreditScoringApp() {
         <form className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10" onSubmit={handleSubmit}>
           {Object.entries(formData).map(([key, value]) => (
             <div key={key}>
-              <label className="block text-sm font-semibold mb-1 text-gray-700">{key.replaceAll('_', ' ')}</label>
+              <label className="block text-sm font-semibold mb-1 text-gray-700">{key === 'ssn' ? 'SSN' : key.replaceAll('_', ' ')}</label>
               {sliderFields.includes(key) ? (
                 <input
                   type="range"
