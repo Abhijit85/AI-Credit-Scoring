@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { CreditCard, Banknote, BarChart, TrendingUp } from 'lucide-react';
+import { logoBase64 } from './logo';
 
 export default function CreditScoringApp() {
   const [formData, setFormData] = useState({
@@ -71,12 +72,12 @@ export default function CreditScoringApp() {
     <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen bg-gradient-to-br from-green-50 via-white to-green-100">
       {/* Left Panel with Image */}
       <div className="bg-gradient-to-br from-green-600 to-green-400 flex items-center justify-center p-6">
-        <img src="/credit-card-image.jpg" alt="Credit Visual" className="max-w-full max-h-full rounded-xl shadow-xl" />
+        <img src={logoBase64} alt="Credit Application" className="w-16 h-16 rounded-xl shadow-xl" />
       </div>
 
       {/* Right Panel with Form and Dashboard */}
       <div className="p-6 lg:p-12 overflow-y-auto">
-        <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">AI Credit Scoring Dashboard</h1>
+        <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">Credit Application</h1>
 
         <form className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10" onSubmit={handleSubmit}>
           {Object.entries(formData).map(([key, value]) => (
