@@ -28,14 +28,22 @@ User Input → React UI → FastAPI (/score) → Rule-based scoring + Bedrock LL
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_REGION=us-east-1
+
+# For on-demand models
 BEDROCK_TEXT_MODEL_ID=anthropic.claude-v2
+
+# For models requiring an inference profile, omit BEDROCK_TEXT_MODEL_ID and set one of:
 BEDROCK_TEXT_INFERENCE_PROFILE_ARN=arn:aws:bedrock:REGION:ACCOUNT_ID:inference-profile/my-text-profile
+BEDROCK_TEXT_INFERENCE_PROFILE_ID=ip-1234567890abcdef
+
 BEDROCK_EMBED_MODEL_ID=amazon.titan-embed-text-v1
 BEDROCK_EMBED_INFERENCE_PROFILE_ARN=arn:aws:bedrock:REGION:ACCOUNT_ID:inference-profile/my-embed-profile
 FRAUD_DETECTOR_MODEL_ARN=arn:aws:frauddetector:us-east-1:123456789012:detector/my-detector   # if using Fraud Detector
 SAGEMAKER_ENDPOINT_NAME=my-anomaly-endpoint                                                   # if using SageMaker
 MONGODB_URI=mongodb://localhost:27017
 ```
+
+The backend will invoke Bedrock through the configured inference profile when the corresponding environment variable is set.
 
 Ensure the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) is configured or the above variables are exported.
 

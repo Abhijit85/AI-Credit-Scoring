@@ -141,20 +141,17 @@ def score_credit(input: CreditInput):
                 "contentType": "application/json",
                 "accept": "application/json",
                 "body": body,
-                "modelId": TEXT_MODEL_ID,
             }
             operation = bedrock_client.meta.service_model.operation_model("InvokeModel")
             members = operation.input_shape.members
-            if "inferenceProfileArn" in members and TEXT_INFERENCE_PROFILE_ARN:
+            if TEXT_INFERENCE_PROFILE_ARN and "inferenceProfileArn" in members:
                 invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
-            elif "inferenceProfileId" in members and TEXT_INFERENCE_PROFILE_ID:
+            elif TEXT_INFERENCE_PROFILE_ID and "inferenceProfileId" in members:
                 invoke_kwargs["inferenceProfileId"] = TEXT_INFERENCE_PROFILE_ID
-
-            if (
-                TEXT_INFERENCE_PROFILE_ARN
-                and "inferenceProfileArn" in operation.input_shape.members
-            ):
-                invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
+            elif TEXT_MODEL_ID:
+                invoke_kwargs["modelId"] = TEXT_MODEL_ID
+            else:
+                raise Exception("Bedrock model or inference profile not configured")
             response = bedrock_client.invoke_model(**invoke_kwargs)
             status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
@@ -221,20 +218,17 @@ def similar_products(query: QueryDescription):
             "contentType": "application/json",
             "accept": "application/json",
             "body": body,
-            "modelId": TEXT_MODEL_ID,
         }
         operation = bedrock_client.meta.service_model.operation_model("InvokeModel")
         members = operation.input_shape.members
-        if "inferenceProfileArn" in members and TEXT_INFERENCE_PROFILE_ARN:
+        if TEXT_INFERENCE_PROFILE_ARN and "inferenceProfileArn" in members:
             invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
-        elif "inferenceProfileId" in members and TEXT_INFERENCE_PROFILE_ID:
+        elif TEXT_INFERENCE_PROFILE_ID and "inferenceProfileId" in members:
             invoke_kwargs["inferenceProfileId"] = TEXT_INFERENCE_PROFILE_ID
-
-        if (
-            TEXT_INFERENCE_PROFILE_ARN
-            and "inferenceProfileArn" in operation.input_shape.members
-        ):
-            invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
+        elif TEXT_MODEL_ID:
+            invoke_kwargs["modelId"] = TEXT_MODEL_ID
+        else:
+            raise Exception("Bedrock model or inference profile not configured")
 
         response = bedrock_client.invoke_model(**invoke_kwargs)
         status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")

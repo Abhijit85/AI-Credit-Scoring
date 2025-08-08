@@ -40,14 +40,21 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_REGION=us-east-1
 ```
 
-2. Enable [Amazon Bedrock](https://aws.amazon.com/bedrock/) and choose models and, if required, their inference profiles:
+2. Enable [Amazon Bedrock](https://aws.amazon.com/bedrock/) and choose models or, if required, their inference profiles:
 
 ```bash
+# For on-demand models
 BEDROCK_TEXT_MODEL_ID=anthropic.claude-v2
+
+# For models that require an inference profile, omit BEDROCK_TEXT_MODEL_ID and set one of:
 BEDROCK_TEXT_INFERENCE_PROFILE_ARN=arn:aws:bedrock:REGION:ACCOUNT_ID:inference-profile/my-text-profile
+BEDROCK_TEXT_INFERENCE_PROFILE_ID=ip-1234567890abcdef
+
 BEDROCK_EMBED_MODEL_ID=amazon.titan-embed-text-v1
 BEDROCK_EMBED_INFERENCE_PROFILE_ARN=arn:aws:bedrock:REGION:ACCOUNT_ID:inference-profile/my-embed-profile
 ```
+
+When an inference profile environment variable is provided, the backend uses it and does not send the `modelId` in the Bedrock request.
 
 3. Deploy an anomaly detection service using [AWS Fraud Detector](https://aws.amazon.com/fraud-detector/) or a [SageMaker](https://aws.amazon.com/sagemaker/) endpoint and capture its identifier:
 
