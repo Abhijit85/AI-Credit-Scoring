@@ -13,6 +13,8 @@ load_dotenv()
 AWS_REGION = os.getenv("AWS_REGION")
 TEXT_MODEL_ID = os.getenv("BEDROCK_TEXT_MODEL_ID")
 EMBED_MODEL_ID = os.getenv("BEDROCK_EMBED_MODEL_ID")
+TEXT_INFERENCE_PROFILE_ARN = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ARN")
+EMBED_INFERENCE_PROFILE_ARN = os.getenv("BEDROCK_EMBED_INFERENCE_PROFILE_ARN")
 
 bedrock_client = boto3.client(
     "bedrock-runtime",
@@ -137,12 +139,16 @@ def score_credit(input: CreditInput):
                     "messages": [{"role": "user", "content": summary_prompt}],
                 }
             )
-            response = bedrock_client.invoke_model(
-                modelId=TEXT_MODEL_ID,
-                contentType="application/json",
-                accept="application/json",
-                body=body,
-            )
+            invoke_kwargs = {
+                "contentType": "application/json",
+                "accept": "application/json",
+                "body": body,
+            }
+            if TEXT_INFERENCE_PROFILE_ARN:
+                invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
+            else:
+                invoke_kwargs["modelId"] = TEXT_MODEL_ID
+            response = bedrock_client.invoke_model(**invoke_kwargs)
             status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
                 raise Exception(f"Bedrock invocation failed with status code {status_code}")
@@ -193,12 +199,16 @@ def score_credit(input: CreditInput):
 def similar_products(query: QueryDescription):
     try:
         embed_body = json.dumps({"inputText": query.description})
-        response = bedrock_client.invoke_model(
-            modelId=EMBED_MODEL_ID,
-            contentType="application/json",
-            accept="application/json",
-            body=embed_body,
-        )
+        invoke_kwargs = {
+            "contentType": "application/json",
+            "accept": "application/json",
+            "body": embed_body,
+        }
+        if EMBED_INFERENCE_PROFILE_ARN:
+            invoke_kwargs["inferenceProfileArn"] = EMBED_INFERENCE_PROFILE_ARN
+        else:
+            invoke_kwargs["modelId"] = EMBED_MODEL_ID
+        response = bedrock_client.invoke_model(**invoke_kwargs)
         status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         if status_code != 200:
             raise Exception(f"Bedrock invocation failed with status code {status_code}")

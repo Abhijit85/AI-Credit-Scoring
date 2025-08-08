@@ -28,7 +28,10 @@ User Input → React UI → FastAPI (/score) → Rule-based scoring + Bedrock LL
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_REGION=us-east-1
-BEDROCK_MODEL_ID=anthropic.claude-v2
+BEDROCK_TEXT_MODEL_ID=anthropic.claude-v2
+BEDROCK_TEXT_INFERENCE_PROFILE_ARN=arn:aws:bedrock:REGION:ACCOUNT_ID:inference-profile/my-text-profile
+BEDROCK_EMBED_MODEL_ID=amazon.titan-embed-text-v1
+BEDROCK_EMBED_INFERENCE_PROFILE_ARN=arn:aws:bedrock:REGION:ACCOUNT_ID:inference-profile/my-embed-profile
 FRAUD_DETECTOR_MODEL_ARN=arn:aws:frauddetector:us-east-1:123456789012:detector/my-detector   # if using Fraud Detector
 SAGEMAKER_ENDPOINT_NAME=my-anomaly-endpoint                                                   # if using SageMaker
 MONGODB_URI=mongodb://localhost:27017
