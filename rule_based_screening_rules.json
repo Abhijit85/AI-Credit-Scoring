@@ -12,7 +12,7 @@
         {
           "name": "SSN/ID Format Validation",
           "description": "Ensure SSN follows the format XXX-XX-XXXX",
-          "condition": "not matches_regex(ssn, '^\\d{3}-\\d{2}-\\d{4}$')",
+          "condition": "not matches_regex(ssn, r'^\\d{3}-\\d{2}-\\d{4}$')",
           "action": "reject"
         },
         {
