@@ -15,6 +15,8 @@ TEXT_MODEL_ID = os.getenv("BEDROCK_TEXT_MODEL_ID")
 EMBED_MODEL_ID = os.getenv("BEDROCK_EMBED_MODEL_ID")
 TEXT_INFERENCE_PROFILE_ARN = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ARN")
 EMBED_INFERENCE_PROFILE_ARN = os.getenv("BEDROCK_EMBED_INFERENCE_PROFILE_ARN")
+TEXT_INFERENCE_PROFILE_ID = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ID")
+EMBED_INFERENCE_PROFILE_ID = os.getenv("BEDROCK_EMBED_INFERENCE_PROFILE_ID")
 
 bedrock_client = boto3.client(
     "bedrock-runtime",
@@ -146,11 +148,19 @@ def score_credit(input: CreditInput):
                 "modelId": TEXT_MODEL_ID,
             }
             operation = bedrock_client.meta.service_model.operation_model("InvokeModel")
+          ofsb9s-codex/insert-user-data-into-mongodb
+            members = operation.input_shape.members
+            if "inferenceProfileArn" in members and TEXT_INFERENCE_PROFILE_ARN:
+                invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
+            elif "inferenceProfileId" in members and TEXT_INFERENCE_PROFILE_ID:
+                invoke_kwargs["inferenceProfileId"] = TEXT_INFERENCE_PROFILE_ID
+
             if (
                 TEXT_INFERENCE_PROFILE_ARN
                 and "inferenceProfileArn" in operation.input_shape.members
             ):
                 invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
+          main
             response = bedrock_client.invoke_model(**invoke_kwargs)
             status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
@@ -209,11 +219,19 @@ def similar_products(query: QueryDescription):
             "modelId": EMBED_MODEL_ID,
         }
         operation = bedrock_client.meta.service_model.operation_model("InvokeModel")
+        ofsb9s-codex/insert-user-data-into-mongodb
+        members = operation.input_shape.members
+        if "inferenceProfileArn" in members and EMBED_INFERENCE_PROFILE_ARN:
+            invoke_kwargs["inferenceProfileArn"] = EMBED_INFERENCE_PROFILE_ARN
+        elif "inferenceProfileId" in members and EMBED_INFERENCE_PROFILE_ID:
+            invoke_kwargs["inferenceProfileId"] = EMBED_INFERENCE_PROFILE_ID
+
         if (
             EMBED_INFERENCE_PROFILE_ARN
             and "inferenceProfileArn" in operation.input_shape.members
         ):
             invoke_kwargs["inferenceProfileArn"] = EMBED_INFERENCE_PROFILE_ARN
+       main
         response = bedrock_client.invoke_model(**invoke_kwargs)
         status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         if status_code != 200:
