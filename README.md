@@ -1,5 +1,5 @@
 
-# AI Credit Scoring App
+# Credit Application
 
 This is a full-stack AI-powered credit scoring system built with:
 - **FastAPI** (backend)
