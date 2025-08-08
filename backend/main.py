@@ -12,11 +12,8 @@ load_dotenv()
 
 AWS_REGION = os.getenv("AWS_REGION")
 TEXT_MODEL_ID = os.getenv("BEDROCK_TEXT_MODEL_ID")
-EMBED_MODEL_ID = os.getenv("BEDROCK_EMBED_MODEL_ID")
 TEXT_INFERENCE_PROFILE_ARN = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ARN")
-EMBED_INFERENCE_PROFILE_ARN = os.getenv("BEDROCK_EMBED_INFERENCE_PROFILE_ARN")
 TEXT_INFERENCE_PROFILE_ID = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ID")
-EMBED_INFERENCE_PROFILE_ID = os.getenv("BEDROCK_EMBED_INFERENCE_PROFILE_ID")
 
 bedrock_client = boto3.client(
     "bedrock-runtime",
@@ -28,7 +25,6 @@ bedrock_client = boto3.client(
 mongo_client = MongoClient(os.getenv("MONGODB_URI"))
 db = mongo_client["bfsi-genai"]
 collection = db["user_profiles"]
-products = db["cc_products"]  # this should contain the vector index and embeddings
 
 app = FastAPI()
 app.add_middleware(
@@ -148,7 +144,6 @@ def score_credit(input: CreditInput):
                 "modelId": TEXT_MODEL_ID,
             }
             operation = bedrock_client.meta.service_model.operation_model("InvokeModel")
-          ofsb9s-codex/insert-user-data-into-mongodb
             members = operation.input_shape.members
             if "inferenceProfileArn" in members and TEXT_INFERENCE_PROFILE_ARN:
                 invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
@@ -160,7 +155,6 @@ def score_credit(input: CreditInput):
                 and "inferenceProfileArn" in operation.input_shape.members
             ):
                 invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
-          main
             response = bedrock_client.invoke_model(**invoke_kwargs)
             status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
@@ -211,57 +205,44 @@ def score_credit(input: CreditInput):
 @app.post("/similar_products")
 def similar_products(query: QueryDescription):
     try:
-        embed_body = json.dumps({"inputText": query.description})
+        prompt = (
+            f"Customer description: {query.description}\n"
+            "Suggest three relevant credit card products in JSON format with 'title' and 'description'."
+        )
+        body = json.dumps(
+            {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 200,
+                "system": "You are a helpful financial assistant recommending credit card products.",
+                "messages": [{"role": "user", "content": prompt}],
+            }
+        )
         invoke_kwargs = {
             "contentType": "application/json",
             "accept": "application/json",
-            "body": embed_body,
-            "modelId": EMBED_MODEL_ID,
+            "body": body,
+            "modelId": TEXT_MODEL_ID,
         }
         operation = bedrock_client.meta.service_model.operation_model("InvokeModel")
-        ofsb9s-codex/insert-user-data-into-mongodb
         members = operation.input_shape.members
-        if "inferenceProfileArn" in members and EMBED_INFERENCE_PROFILE_ARN:
-            invoke_kwargs["inferenceProfileArn"] = EMBED_INFERENCE_PROFILE_ARN
-        elif "inferenceProfileId" in members and EMBED_INFERENCE_PROFILE_ID:
-            invoke_kwargs["inferenceProfileId"] = EMBED_INFERENCE_PROFILE_ID
+        if "inferenceProfileArn" in members and TEXT_INFERENCE_PROFILE_ARN:
+            invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
+        elif "inferenceProfileId" in members and TEXT_INFERENCE_PROFILE_ID:
+            invoke_kwargs["inferenceProfileId"] = TEXT_INFERENCE_PROFILE_ID
 
         if (
-            EMBED_INFERENCE_PROFILE_ARN
+            TEXT_INFERENCE_PROFILE_ARN
             and "inferenceProfileArn" in operation.input_shape.members
         ):
-            invoke_kwargs["inferenceProfileArn"] = EMBED_INFERENCE_PROFILE_ARN
-       main
+            invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
+
         response = bedrock_client.invoke_model(**invoke_kwargs)
         status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         if status_code != 200:
             raise Exception(f"Bedrock invocation failed with status code {status_code}")
         response_body = json.loads(response["body"].read())
-        embedding = response_body.get("embedding")
-        if embedding is None:
-            raise Exception("No embedding returned from Bedrock")
-
-        results = products.aggregate([
-            {
-                "$vectorSearch": {
-                    "index": "product_embedding_index",
-                    "path": "embedding",
-                    "queryVector": embedding,
-                    "numCandidates": 100,
-                    "limit": 3
-                }
-            },
-            {
-                "$project": {
-                    "_id": 0,
-                    "title": 1,
-                    "text": 1,
-                    "source": 1
-                }
-            }
-        ])
-
-        return {"results": list(results)}
+        suggestions = response_body["content"][0]["text"].strip()
+        return {"results": suggestions}
     except Exception as e:
-        return {"error": f"Vector search failed: {str(e)}"}
+        return {"error": f"Text generation failed: {str(e)}"}
 
