@@ -143,11 +143,14 @@ def score_credit(input: CreditInput):
                 "contentType": "application/json",
                 "accept": "application/json",
                 "body": body,
+                "modelId": TEXT_MODEL_ID,
             }
-            if TEXT_INFERENCE_PROFILE_ARN:
+            operation = bedrock_client.meta.service_model.operation_model("InvokeModel")
+            if (
+                TEXT_INFERENCE_PROFILE_ARN
+                and "inferenceProfileArn" in operation.input_shape.members
+            ):
                 invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
-            else:
-                invoke_kwargs["modelId"] = TEXT_MODEL_ID
             response = bedrock_client.invoke_model(**invoke_kwargs)
             status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
@@ -203,11 +206,14 @@ def similar_products(query: QueryDescription):
             "contentType": "application/json",
             "accept": "application/json",
             "body": embed_body,
+            "modelId": EMBED_MODEL_ID,
         }
-        if EMBED_INFERENCE_PROFILE_ARN:
+        operation = bedrock_client.meta.service_model.operation_model("InvokeModel")
+        if (
+            EMBED_INFERENCE_PROFILE_ARN
+            and "inferenceProfileArn" in operation.input_shape.members
+        ):
             invoke_kwargs["inferenceProfileArn"] = EMBED_INFERENCE_PROFILE_ARN
-        else:
-            invoke_kwargs["modelId"] = EMBED_MODEL_ID
         response = bedrock_client.invoke_model(**invoke_kwargs)
         status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         if status_code != 200:
