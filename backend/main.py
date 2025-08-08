@@ -11,7 +11,7 @@ from validators import evaluate_rules
 load_dotenv()
 
 AWS_REGION = os.getenv("AWS_REGION")
-TEXT_MODEL_ID = os.getenv("BEDROCK_TEXT_MODEL_ID")
+TEXT_REGION = os.getenv("BEDROCK_TEXT_REGION")
 TEXT_INFERENCE_PROFILE_ARN = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ARN")
 TEXT_INFERENCE_PROFILE_ID = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ID")
 
@@ -148,10 +148,17 @@ def score_credit(input: CreditInput):
                 invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
             elif TEXT_INFERENCE_PROFILE_ID and "inferenceProfileId" in members:
                 invoke_kwargs["inferenceProfileId"] = TEXT_INFERENCE_PROFILE_ID
+4xgegp-codex/fix-model-invocation-with-on-demand-throughput
+            else:
+                raise Exception("Bedrock inference profile not configured")
+            if TEXT_REGION and "targetModelRegion" in members:
+                invoke_kwargs["targetModelRegion"] = TEXT_REGION
+
             elif TEXT_MODEL_ID:
                 invoke_kwargs["modelId"] = TEXT_MODEL_ID
             else:
                 raise Exception("Bedrock model or inference profile not configured")
+main
             response = bedrock_client.invoke_model(**invoke_kwargs)
             status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             if status_code != 200:
@@ -225,10 +232,17 @@ def similar_products(query: QueryDescription):
             invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
         elif TEXT_INFERENCE_PROFILE_ID and "inferenceProfileId" in members:
             invoke_kwargs["inferenceProfileId"] = TEXT_INFERENCE_PROFILE_ID
+        4xgegp-codex/fix-model-invocation-with-on-demand-throughput
+        else:
+            raise Exception("Bedrock inference profile not configured")
+        if TEXT_REGION and "targetModelRegion" in members:
+            invoke_kwargs["targetModelRegion"] = TEXT_REGION
+
         elif TEXT_MODEL_ID:
             invoke_kwargs["modelId"] = TEXT_MODEL_ID
         else:
             raise Exception("Bedrock model or inference profile not configured")
+        main
 
         response = bedrock_client.invoke_model(**invoke_kwargs)
         status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
