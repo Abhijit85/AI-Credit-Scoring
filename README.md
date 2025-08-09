@@ -32,6 +32,12 @@ How a Credit Score Is Generated
 
 Before running the application, configure AWS access and model settings.
 
+Authenticate to AWS using SSO if required:
+
+```bash
+aws sso login --profile default
+```
+
 1. Install the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and run `aws configure` or set environment variables.
 
 ```bash
