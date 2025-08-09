@@ -7,26 +7,13 @@ import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from validators import evaluate_rules
+from langchain_core.messages import HumanMessage, SystemMessage
 
-from src.llm.service import summarize_credit_profile
-from src.llm.bedrock_runtime import BedrockInvoker, format_user_message, extract_text
+from src.llm.service import summarize_credit_profile, llm
 
 load_dotenv()
 
 AWS_REGION = os.getenv("AWS_REGION")
-
-ujvvuj-codex/find-usage-of-main.py-in-codebase
-llm = BedrockInvoker(aws_region=AWS_REGION, api_key=os.getenv("BEDROCK_API_KEY"))
-
-=======
-0e3i4l-codex/find-usage-of-main.py-in-codebase
-llm = BedrockInvoker(aws_region=AWS_REGION, api_key=os.getenv("BEDROCK_API_KEY"))
-
- 96qxa3-codex/find-usage-of-main.py-in-codebase
-llm = BedrockInvoker(aws_region=AWS_REGION, api_key=os.getenv("BEDROCK_API_KEY"))
-
-llm = BedrockInvoker(aws_region=AWS_REGION)
- main
 
 
 mongo_client = MongoClient(os.getenv("MONGODB_URI"))
@@ -189,12 +176,15 @@ def similar_products(query: QueryDescription):
             f"Customer description: {query.description}\n"
             "Suggest three relevant credit card products in JSON format with 'title' and 'description'."
         )
-        response = llm.invoke_messages(
-            messages=[format_user_message(prompt)],
-            system_prompt="You are a helpful financial assistant recommending credit card products.",
-            max_tokens=200,
+        response = llm.invoke(
+            [
+                SystemMessage(
+                    content="You are a helpful financial assistant recommending credit card products."
+                ),
+                HumanMessage(content=prompt),
+            ]
         )
-        suggestions = extract_text(response).strip()
+        suggestions = response.content.strip()
         return {"results": suggestions}
     except Exception as e:
         return {"error": f"Text generation failed: {str(e)}"}

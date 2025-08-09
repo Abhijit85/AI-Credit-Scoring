@@ -3,8 +3,8 @@ uvicorn
 boto3
 pydantic
 python-dotenv
-boto3
 awscli
 botocore
 sagemaker
 faker
+langchain-aws
