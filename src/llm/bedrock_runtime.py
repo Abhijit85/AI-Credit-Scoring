@@ -1,6 +1,10 @@
 import json
 import os
 from typing import Dict, Any, Optional, Set
+0e3i4l-codex/find-usage-of-main.py-in-codebase
+from urllib.parse import quote
+
+main
 
 import boto3
 from botocore.config import Config
@@ -96,6 +100,36 @@ class BedrockInvoker:
 
         body_json = json.dumps(payload)
         if self.api_key:
+        0e3i4l-codex/find-usage-of-main.py-in-codebase
+            # Prefer an inference profile (ARN or ID) when available for higher
+            # throughput before falling back to a direct model invocation.
+            if self.profile_arn:
+                identifier = quote(self.profile_arn, safe="")
+                url = (
+                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
+                    f"inference-profiles/{identifier}/model/invoke"
+                )
+            elif self.profile_id:
+                identifier = quote(self.profile_id, safe="")
+                url = (
+                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
+                    f"inference-profiles/{identifier}/model/invoke"
+                )
+            elif self.model_id:
+                identifier = quote(self.model_id, safe="")
+                url = (
+                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
+                    f"model/{identifier}/invoke"
+                )
+            else:
+                raise RuntimeError(
+                    "Bedrock not configured: set BEDROCK_TEXT_INFERENCE_PROFILE_ID (or ARN) or BEDROCK_TEXT_MODEL_ID",
+                )
+
+            if self.target_model_region:
+                url += f"?targetModelRegion={quote(self.target_model_region, safe='')}"
+
+=======
             kwargs = self._build_invoke_kwargs(body_json)
             model_id = kwargs.get("modelId")
             if not model_id:
@@ -103,6 +137,7 @@ class BedrockInvoker:
                     "API key authentication requires BEDROCK_TEXT_MODEL_ID to be set"
                 )
             url = f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/model/{model_id}/invoke"
+           main
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
