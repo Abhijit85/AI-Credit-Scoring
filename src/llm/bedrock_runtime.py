@@ -1,9 +1,11 @@
 import json
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Set
+from urllib.parse import quote
 
 import boto3
 from botocore.config import Config
+import requests
 
 ANTHROPIC_VERSION = "bedrock-2023-05-31"
 
@@ -19,22 +21,25 @@ class BedrockInvoker:
         self,
         aws_region: Optional[str] = None,
         timeout_sec: int = 60,
+        api_key: Optional[str] = None,
     ):
         self.aws_region = aws_region or os.getenv("AWS_REGION", "us-west-2")
-        self.bedrock = boto3.client(
-            "bedrock-runtime",
-            region_name=self.aws_region,
-            config=Config(read_timeout=timeout_sec, retries={"max_attempts": 3}),
-        )
+        self.api_key = api_key or os.getenv("BEDROCK_API_KEY")
+        self.bedrock = None
+        self._params_supported: Set[str] = set()
+        if not self.api_key:
+            self.bedrock = boto3.client(
+                "bedrock-runtime",
+                region_name=self.aws_region,
+                config=Config(read_timeout=timeout_sec, retries={"max_attempts": 3}),
+            )
+            op = self.bedrock.meta.service_model.operation_model("InvokeModel")
+            self._params_supported = set(op.input_shape.members.keys())
         # Env-driven configuration
         self.model_id = os.getenv("BEDROCK_TEXT_MODEL_ID", "").strip()
         self.profile_id = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ID", "").strip()
         self.profile_arn = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ARN", "").strip()
         self.target_model_region = os.getenv("BEDROCK_TEXT_REGION", "").strip()
-
-        # Detect available parameters in current SDK
-        op = self.bedrock.meta.service_model.operation_model("InvokeModel")
-        self._params_supported = set(op.input_shape.members.keys())
 
     def _build_invoke_kwargs(self, body_json: str) -> Dict[str, Any]:
         """
@@ -91,6 +96,44 @@ class BedrockInvoker:
             payload.update(extra)
 
         body_json = json.dumps(payload)
+        if self.api_key:
+            # Prefer an inference profile (ARN or ID) when available for higher
+            # throughput before falling back to a direct model invocation.
+            if self.profile_arn:
+                identifier = quote(self.profile_arn, safe="")
+                url = (
+                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
+                    f"inference-profiles/{identifier}/model/invoke"
+                )
+            elif self.profile_id:
+                identifier = quote(self.profile_id, safe="")
+                url = (
+                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
+                    f"inference-profiles/{identifier}/model/invoke"
+                )
+            elif self.model_id:
+                identifier = quote(self.model_id, safe="")
+                url = (
+                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
+                    f"model/{identifier}/invoke"
+                )
+            else:
+                raise RuntimeError(
+                    "Bedrock not configured: set BEDROCK_TEXT_INFERENCE_PROFILE_ID (or ARN) or BEDROCK_TEXT_MODEL_ID",
+                )
+
+            if self.target_model_region:
+                url += f"?targetModelRegion={quote(self.target_model_region, safe='')}"
+
+            headers = {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "x-api-key": self.api_key,
+            }
+            resp = requests.post(url, headers=headers, data=body_json)
+            resp.raise_for_status()
+            return resp.json()
+
         kwargs = self._build_invoke_kwargs(body_json)
         call_kwargs = {
             k: v
