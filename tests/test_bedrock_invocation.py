@@ -3,6 +3,7 @@ import sys
 sys.path.append(os.getcwd())
 import pytest
 from src.llm.bedrock_runtime import BedrockInvoker, format_user_message
+import src.llm.bedrock_runtime as br
 
 @pytest.mark.unit
 def test_requires_configuration(monkeypatch):
@@ -37,3 +38,35 @@ def test_profile_requires_model_id(monkeypatch):
     inv = BedrockInvoker(aws_region=os.getenv("AWS_REGION", "us-west-2"))
     with pytest.raises(RuntimeError):
         inv._build_invoke_kwargs('{}')
+
+
+@pytest.mark.unit
+def test_api_key_uses_profile_url(monkeypatch):
+    """When API key auth is used with an inference profile, the URL should
+    include both the profile and model segments and the model ID must be
+    URL encoded."""
+    monkeypatch.setenv("BEDROCK_API_KEY", "dummy-key")
+    monkeypatch.setenv("BEDROCK_TEXT_MODEL_ID", "model:with:colon")
+    monkeypatch.setenv("BEDROCK_TEXT_INFERENCE_PROFILE_ID", "profile-id")
+
+    captured = {}
+
+    def fake_post(url, headers, data):
+        captured["url"] = url
+
+        class Resp:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {}
+
+        return Resp()
+
+    monkeypatch.setattr(br.requests, "post", fake_post)
+
+    inv = BedrockInvoker(aws_region=os.getenv("AWS_REGION", "us-west-2"))
+    inv.invoke_messages(messages=[format_user_message("hi")], max_tokens=1)
+
+    assert "inference-profiles/profile-id/model/" in captured["url"]
+    assert "model%3Awith%3Acolon" in captured["url"]
