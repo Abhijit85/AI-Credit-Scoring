@@ -8,27 +8,26 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from validators import evaluate_rules
 
+from src.llm.service import summarize_credit_profile
+from src.llm.bedrock_runtime import BedrockInvoker, format_user_message, extract_text
+
 load_dotenv()
 
 AWS_REGION = os.getenv("AWS_REGION")
-TEXT_REGION = os.getenv("BEDROCK_TEXT_REGION")
-TEXT_INFERENCE_PROFILE_ARN = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ARN")
-TEXT_INFERENCE_PROFILE_ID = os.getenv("BEDROCK_TEXT_INFERENCE_PROFILE_ID")
 
-bedrock_client = boto3.client(
-    "bedrock-runtime",
-    region_name=AWS_REGION,
-    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    aws_session_token=os.getenv("AWS_SESSION_TOKEN"),
-)
+llm = BedrockInvoker(aws_region=AWS_REGION, api_key=os.getenv("BEDROCK_API_KEY"))
+
 mongo_client = MongoClient(os.getenv("MONGODB_URI"))
 db = mongo_client["bfsi-genai"]
 collection = db["user_profiles"]
 
 app = FastAPI()
 app.add_middleware(
-    CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
@@ -129,47 +128,7 @@ def score_credit(input: CreditInput):
         """
 
         try:
-            body = json.dumps(
-                {
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 200,
-                    "system": "You are a credit analyst helping users understand their credit risk.",
-                    "messages": [{"role": "user", "content": summary_prompt}],
-                }
-            )
-            invoke_kwargs = {
-                "contentType": "application/json",
-                "accept": "application/json",
-                "body": body,
-            }
-            operation = bedrock_client.meta.service_model.operation_model("InvokeModel")
-            members = operation.input_shape.members
-            if TEXT_INFERENCE_PROFILE_ARN and "inferenceProfileArn" in members:
-                invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
-            elif TEXT_INFERENCE_PROFILE_ID and "inferenceProfileId" in members:
-                invoke_kwargs["inferenceProfileId"] = TEXT_INFERENCE_PROFILE_ID
- 3mbfqo-codex/fix-model-invocation-with-on-demand-throughput
-=======
-4xgegp-codex/fix-model-invocation-with-on-demand-throughput
- main
-            else:
-                raise Exception("Bedrock inference profile not configured")
-            if TEXT_REGION and "targetModelRegion" in members:
- 3mbfqo-codex/fix-model-invocation-with-on-demand-throughput
-=======
-
-            elif TEXT_MODEL_ID:
-                invoke_kwargs["modelId"] = TEXT_MODEL_ID
-            else:
-                raise Exception("Bedrock model or inference profile not configured")
-main
- main
-            response = bedrock_client.invoke_model(**invoke_kwargs)
-            status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-            if status_code != 200:
-                raise Exception(f"Bedrock invocation failed with status code {status_code}")
-            response_body = json.loads(response["body"].read())
-            explanation = response_body["content"][0]["text"].strip()
+            explanation = summarize_credit_profile(summary_prompt)
         except Exception as e:
             explanation = f"LLM summary failed: {str(e)}"
 
@@ -218,49 +177,12 @@ def similar_products(query: QueryDescription):
             f"Customer description: {query.description}\n"
             "Suggest three relevant credit card products in JSON format with 'title' and 'description'."
         )
-        body = json.dumps(
-            {
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 200,
-                "system": "You are a helpful financial assistant recommending credit card products.",
-                "messages": [{"role": "user", "content": prompt}],
-            }
+        response = llm.invoke_messages(
+            messages=[format_user_message(prompt)],
+            system_prompt="You are a helpful financial assistant recommending credit card products.",
+            max_tokens=200,
         )
-        invoke_kwargs = {
-            "contentType": "application/json",
-            "accept": "application/json",
-            "body": body,
-        }
-        operation = bedrock_client.meta.service_model.operation_model("InvokeModel")
-        members = operation.input_shape.members
-        if TEXT_INFERENCE_PROFILE_ARN and "inferenceProfileArn" in members:
-            invoke_kwargs["inferenceProfileArn"] = TEXT_INFERENCE_PROFILE_ARN
-        elif TEXT_INFERENCE_PROFILE_ID and "inferenceProfileId" in members:
-            invoke_kwargs["inferenceProfileId"] = TEXT_INFERENCE_PROFILE_ID
- 3mbfqo-codex/fix-model-invocation-with-on-demand-throughput
-=======
-        4xgegp-codex/fix-model-invocation-with-on-demand-throughput
- main
-        else:
-            raise Exception("Bedrock inference profile not configured")
-        if TEXT_REGION and "targetModelRegion" in members:
-            invoke_kwargs["targetModelRegion"] = TEXT_REGION
- 3mbfqo-codex/fix-model-invocation-with-on-demand-throughput
-=======
-
-        elif TEXT_MODEL_ID:
-            invoke_kwargs["modelId"] = TEXT_MODEL_ID
-        else:
-            raise Exception("Bedrock model or inference profile not configured")
- main
-
-        response = bedrock_client.invoke_model(**invoke_kwargs)
-        status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-        if status_code != 200:
-            raise Exception(f"Bedrock invocation failed with status code {status_code}")
-        response_body = json.loads(response["body"].read())
-        suggestions = response_body["content"][0]["text"].strip()
+        suggestions = extract_text(response).strip()
         return {"results": suggestions}
     except Exception as e:
         return {"error": f"Text generation failed: {str(e)}"}
-
