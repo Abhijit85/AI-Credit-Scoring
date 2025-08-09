@@ -1,10 +1,14 @@
 import json
 import os
 from typing import Dict, Any, Optional, Set
+ ujvvuj-codex/find-usage-of-main.py-in-codebase
+from urllib.parse import quote
+
 0e3i4l-codex/find-usage-of-main.py-in-codebase
 from urllib.parse import quote
 
 main
+
 
 import boto3
 from botocore.config import Config
@@ -47,7 +51,8 @@ class BedrockInvoker:
     def _build_invoke_kwargs(self, body_json: str) -> Dict[str, Any]:
         """
         Build kwargs for bedrock.invoke_model() choosing profile ARN/ID first,
-        then falling back to modelId if no profile configured.
+        but always include modelId so the runtime knows which model to invoke.
+        Falls back to modelId alone if no profile is configured.
         """
         kwargs: Dict[str, Any] = {
             "contentType": "application/json",
@@ -55,18 +60,39 @@ class BedrockInvoker:
             "body": body_json,
         }
 
-        # Prefer inference profile (ARN > ID) when provided
-        if self.profile_arn:
+        # Prefer inference profile (ARN > ID) when provided.  However, some
+        # boto3 versions do not yet expose these parameters in the Runtime
+        # client.  When inference profiles are requested but not supported,
+        # fall back to a direct modelId if available, otherwise raise a clear
+        # error rather than invoking the API with missing parameters.
+        if self.profile_arn and "inferenceProfileArn" in self._params_supported:
+            if not self.model_id:
+                raise RuntimeError(
+                    "BEDROCK_TEXT_MODEL_ID must be set when using an inference profile."
+                )
             kwargs["inferenceProfileArn"] = self.profile_arn
-        elif self.profile_id:
-            kwargs["inferenceProfileId"] = self.profile_id
-        elif self.model_id:
-            # Fallback: on-demand modelId (only if profile not set)
             kwargs["modelId"] = self.model_id
+        elif self.profile_id and "inferenceProfileId" in self._params_supported:
+            if not self.model_id:
+                raise RuntimeError(
+                    "BEDROCK_TEXT_MODEL_ID must be set when using an inference profile."
+                )
+            kwargs["inferenceProfileId"] = self.profile_id
+            kwargs["modelId"] = self.model_id
+        elif self.model_id:
+            # Either no profile configured or the SDK doesn't support it; use
+            # the modelId directly.
+            kwargs["modelId"] = self.model_id
+        elif self.profile_id or self.profile_arn:
+            raise RuntimeError(
+                "The installed boto3 does not support Bedrock inference profiles. "
+                "Set BEDROCK_TEXT_MODEL_ID or provide BEDROCK_API_KEY to call the profile."
+            )
         else:
             raise RuntimeError(
-                "Bedrock not configured: set BEDROCK_TEXT_INFERENCE_PROFILE_ID (or ARN) "
-                "for Claude 3.5 Haiku, or BEDROCK_TEXT_MODEL_ID for on-demand models."
+                "Bedrock not configured: set BEDROCK_TEXT_MODEL_ID and an "
+                "inference profile for Claude 3.5 Haiku, or BEDROCK_TEXT_MODEL_ID "
+                "alone for on-demand models."
             )
 
         # Optional cross-region target if provided
@@ -100,6 +126,31 @@ class BedrockInvoker:
 
         body_json = json.dumps(payload)
         if self.api_key:
+ ujvvuj-codex/find-usage-of-main.py-in-codebase
+            # Prefer an inference profile (ARN or ID) when available for higher
+            # throughput before falling back to a direct model invocation.
+            if self.profile_arn:
+                if not self.model_id:
+                    raise RuntimeError(
+                        "BEDROCK_TEXT_MODEL_ID must be set when using an inference profile."
+                    )
+                identifier = quote(self.profile_arn, safe="")
+                model = quote(self.model_id, safe="")
+                url = (
+                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
+                    f"inference-profiles/{identifier}/model/{model}/invoke"
+                )
+            elif self.profile_id:
+                if not self.model_id:
+                    raise RuntimeError(
+                        "BEDROCK_TEXT_MODEL_ID must be set when using an inference profile."
+                    )
+                identifier = quote(self.profile_id, safe="")
+                model = quote(self.model_id, safe="")
+                url = (
+                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
+                    f"inference-profiles/{identifier}/model/{model}/invoke"
+
         0e3i4l-codex/find-usage-of-main.py-in-codebase
             # Prefer an inference profile (ARN or ID) when available for higher
             # throughput before falling back to a direct model invocation.
@@ -114,6 +165,7 @@ class BedrockInvoker:
                 url = (
                     f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
                     f"inference-profiles/{identifier}/model/invoke"
+ main
                 )
             elif self.model_id:
                 identifier = quote(self.model_id, safe="")
@@ -123,13 +175,18 @@ class BedrockInvoker:
                 )
             else:
                 raise RuntimeError(
+ ujvvuj-codex/find-usage-of-main.py-in-codebase
+                    "Bedrock not configured: set BEDROCK_TEXT_MODEL_ID and optionally an inference profile",
+
                     "Bedrock not configured: set BEDROCK_TEXT_INFERENCE_PROFILE_ID (or ARN) or BEDROCK_TEXT_MODEL_ID",
+ main
                 )
 
             if self.target_model_region:
                 url += f"?targetModelRegion={quote(self.target_model_region, safe='')}"
 
-=======
+ ujvvuj-codex/find-usage-of-main.py-in-codebase
+
             kwargs = self._build_invoke_kwargs(body_json)
             model_id = kwargs.get("modelId")
             if not model_id:
@@ -138,6 +195,7 @@ class BedrockInvoker:
                 )
             url = f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/model/{model_id}/invoke"
            main
+
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json",

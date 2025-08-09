@@ -15,6 +15,10 @@ load_dotenv()
 
 AWS_REGION = os.getenv("AWS_REGION")
 
+ujvvuj-codex/find-usage-of-main.py-in-codebase
+llm = BedrockInvoker(aws_region=AWS_REGION, api_key=os.getenv("BEDROCK_API_KEY"))
+
+=======
 0e3i4l-codex/find-usage-of-main.py-in-codebase
 llm = BedrockInvoker(aws_region=AWS_REGION, api_key=os.getenv("BEDROCK_API_KEY"))
 
@@ -23,6 +27,7 @@ llm = BedrockInvoker(aws_region=AWS_REGION, api_key=os.getenv("BEDROCK_API_KEY")
 
 llm = BedrockInvoker(aws_region=AWS_REGION)
  main
+
 
 mongo_client = MongoClient(os.getenv("MONGODB_URI"))
 db = mongo_client["bfsi-genai"]
