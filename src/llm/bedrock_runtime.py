@@ -1,14 +1,7 @@
 import json
 import os
 from typing import Dict, Any, Optional, Set
- ujvvuj-codex/find-usage-of-main.py-in-codebase
 from urllib.parse import quote
-
-0e3i4l-codex/find-usage-of-main.py-in-codebase
-from urllib.parse import quote
-
-main
-
 
 import boto3
 from botocore.config import Config
@@ -18,12 +11,12 @@ ANTHROPIC_VERSION = "bedrock-2023-05-31"
 
 
 class BedrockInvoker:
-    """
-    Thin wrapper around Bedrock Runtime that supports:
+    """Thin wrapper around Bedrock Runtime that supports:
       - Inference Profiles (preferred for Claude 3.5 Haiku)
       - Fallback to direct modelId if profile is not configured
       - Optional cross-region routing via targetModelRegion
     """
+
     def __init__(
         self,
         aws_region: Optional[str] = None,
@@ -49,11 +42,9 @@ class BedrockInvoker:
         self.target_model_region = os.getenv("BEDROCK_TEXT_REGION", "").strip()
 
     def _build_invoke_kwargs(self, body_json: str) -> Dict[str, Any]:
-        """
-        Build kwargs for bedrock.invoke_model() choosing profile ARN/ID first,
+        """Build kwargs for bedrock.invoke_model() choosing profile ARN/ID first,
         but always include modelId so the runtime knows which model to invoke.
-        Falls back to modelId alone if no profile is configured.
-        """
+        Falls back to modelId alone if no profile is configured."""
         kwargs: Dict[str, Any] = {
             "contentType": "application/json",
             "accept": "application/json",
@@ -109,9 +100,7 @@ class BedrockInvoker:
         temperature: Optional[float] = None,
         extra: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        Invoke Anthropic chat-style messages API on Bedrock.
-        """
+        """Invoke Anthropic chat-style messages API on Bedrock."""
         payload: Dict[str, Any] = {
             "anthropic_version": ANTHROPIC_VERSION,
             "messages": messages,
@@ -126,76 +115,25 @@ class BedrockInvoker:
 
         body_json = json.dumps(payload)
         if self.api_key:
- ujvvuj-codex/find-usage-of-main.py-in-codebase
-            # Prefer an inference profile (ARN or ID) when available for higher
-            # throughput before falling back to a direct model invocation.
-            if self.profile_arn:
-                if not self.model_id:
-                    raise RuntimeError(
-                        "BEDROCK_TEXT_MODEL_ID must be set when using an inference profile."
-                    )
-                identifier = quote(self.profile_arn, safe="")
-                model = quote(self.model_id, safe="")
-                url = (
-                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
-                    f"inference-profiles/{identifier}/model/{model}/invoke"
-                )
-            elif self.profile_id:
-                if not self.model_id:
-                    raise RuntimeError(
-                        "BEDROCK_TEXT_MODEL_ID must be set when using an inference profile."
-                    )
-                identifier = quote(self.profile_id, safe="")
-                model = quote(self.model_id, safe="")
-                url = (
-                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
-                    f"inference-profiles/{identifier}/model/{model}/invoke"
-
-        0e3i4l-codex/find-usage-of-main.py-in-codebase
-            # Prefer an inference profile (ARN or ID) when available for higher
-            # throughput before falling back to a direct model invocation.
-            if self.profile_arn:
-                identifier = quote(self.profile_arn, safe="")
-                url = (
-                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
-                    f"inference-profiles/{identifier}/model/invoke"
-                )
-            elif self.profile_id:
-                identifier = quote(self.profile_id, safe="")
-                url = (
-                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
-                    f"inference-profiles/{identifier}/model/invoke"
- main
-                )
-            elif self.model_id:
-                identifier = quote(self.model_id, safe="")
-                url = (
-                    f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
-                    f"model/{identifier}/invoke"
-                )
-            else:
+            # When using API key auth we must provide an inference profile;
+            # direct model invocation is not permitted.
+            if not (self.profile_arn or self.profile_id):
                 raise RuntimeError(
- ujvvuj-codex/find-usage-of-main.py-in-codebase
-                    "Bedrock not configured: set BEDROCK_TEXT_MODEL_ID and optionally an inference profile",
-
-                    "Bedrock not configured: set BEDROCK_TEXT_INFERENCE_PROFILE_ID (or ARN) or BEDROCK_TEXT_MODEL_ID",
- main
+                    "BEDROCK_API_KEY requires BEDROCK_TEXT_INFERENCE_PROFILE_ID "
+                    "or BEDROCK_TEXT_INFERENCE_PROFILE_ARN to be set."
                 )
-
+            if not self.model_id:
+                raise RuntimeError(
+                    "BEDROCK_TEXT_MODEL_ID must be set when using an inference profile."
+                )
+            identifier = quote(self.profile_arn or self.profile_id, safe="")
+            model = quote(self.model_id, safe="")
+            url = (
+                f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/"
+                f"inference-profiles/{identifier}/model/{model}/invoke"
+            )
             if self.target_model_region:
                 url += f"?targetModelRegion={quote(self.target_model_region, safe='')}"
-
- ujvvuj-codex/find-usage-of-main.py-in-codebase
-
-            kwargs = self._build_invoke_kwargs(body_json)
-            model_id = kwargs.get("modelId")
-            if not model_id:
-                raise RuntimeError(
-                    "API key authentication requires BEDROCK_TEXT_MODEL_ID to be set"
-                )
-            url = f"https://bedrock-runtime.{self.aws_region}.amazonaws.com/model/{model_id}/invoke"
-           main
-
             headers = {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
