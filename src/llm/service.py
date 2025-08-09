@@ -4,7 +4,9 @@ from .bedrock_runtime import BedrockInvoker, format_user_message, extract_text
 
 load_dotenv()
 
-invoker = BedrockInvoker(aws_region=os.getenv("AWS_REGION"))
+invoker = BedrockInvoker(
+    aws_region=os.getenv("AWS_REGION"), api_key=os.getenv("BEDROCK_API_KEY")
+)
 
 def summarize_credit_profile(prompt: str) -> str:
     """

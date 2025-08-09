@@ -21,5 +21,19 @@ def test_prefers_profile_when_available(monkeypatch):
     inv = BedrockInvoker(aws_region=os.getenv("AWS_REGION", "us-west-2"))
     # private method allowed in unit test context
     kwargs = inv._build_invoke_kwargs('{"foo":"bar"}')
-    assert "inferenceProfileId" in kwargs
-    assert "modelId" not in kwargs
+    if "inferenceProfileId" in inv._params_supported:
+        assert kwargs.get("inferenceProfileId") == "us.anthropic.claude-3-5-haiku-20241022-v1:0"
+        assert kwargs.get("modelId") == "anthropic.claude-v2:1"
+    else:
+        # Older boto3 versions don't expose inference profile parameters and we
+        # fall back to modelId to keep invocations valid.
+        assert kwargs.get("modelId") == "anthropic.claude-v2:1"
+
+
+@pytest.mark.unit
+def test_profile_requires_model_id(monkeypatch):
+    monkeypatch.setenv("BEDROCK_TEXT_INFERENCE_PROFILE_ID", "profile-id")
+    monkeypatch.delenv("BEDROCK_TEXT_MODEL_ID", raising=False)
+    inv = BedrockInvoker(aws_region=os.getenv("AWS_REGION", "us-west-2"))
+    with pytest.raises(RuntimeError):
+        inv._build_invoke_kwargs('{}')
