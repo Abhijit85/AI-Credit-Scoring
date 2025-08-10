@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { CreditCard, Banknote, BarChart, TrendingUp } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { logoBase64 } from './logo';
 
 export default function CreditScoringApp() {
@@ -25,6 +26,7 @@ export default function CreditScoringApp() {
 
   const handleSubmit = async (e) => {
     setVectorProducts([]);
+    setScoreBreakdown({ repayment: 0, utilization: 0, outstanding: 0, inquiries: 0 });
     e.preventDefault();
     const emptyField = Object.entries(formData).find(([_, v]) => v.trim() === "");
     if (emptyField) {
@@ -44,10 +46,10 @@ export default function CreditScoringApp() {
       setCreditScore(result.credit_score_estimate);
       setAnomalyScore(result.anomaly_score ?? result.fraud_risk ?? null);
       setScoreBreakdown({
-        repayment: result.repayment || 0,
-        utilization: result.utilization || 0,
-        outstanding: result.outstanding || 0,
-        inquiries: result.inquiries || 0
+        repayment: Number(result.repayment ?? 0),
+        utilization: Number(result.utilization ?? 0),
+        outstanding: Number(result.outstanding ?? 0),
+        inquiries: Number(result.inquiries ?? 0)
       });
       setRecommendations(result.recommendations || []);
       setSummary(result.summary || '');
@@ -179,7 +181,7 @@ export default function CreditScoringApp() {
             {summary && (
               <div className="bg-white rounded shadow p-6 text-sm text-gray-700 max-w-4xl mx-auto">
                 <h2 className="text-md font-semibold mb-2 text-gray-800">LLM Credit Risk Summary</h2>
-                <p dangerouslySetInnerHTML={{ __html: summary.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
+                <ReactMarkdown className="prose prose-sm max-w-none">{summary}</ReactMarkdown>
               </div>
             )}
           </div>
