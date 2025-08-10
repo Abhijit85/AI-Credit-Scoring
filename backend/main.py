@@ -58,6 +58,13 @@ class QueryDescription(BaseModel):
     description: str
 
 
+def strip_questions(text: str) -> str:
+    """Remove lines ending with a question mark to avoid follow-up prompts."""
+    return "\n".join(
+        line for line in text.splitlines() if not line.strip().endswith("?")
+    ).strip()
+
+
 def invoke_scoring_service(profile: dict, service: str = os.getenv("MODEL_SERVICE", "frauddetector")):
     """Send profile data to the configured AWS service and return the result."""
     try:
@@ -125,10 +132,14 @@ def score_credit(input: CreditInput):
         - Outstanding Debt: {input.Outstanding_Debt}
 
         Summarize their credit risk and recommend the most important steps to improve their score.
+        Format the response in markdown with headings for Summary, Key Strengths,
+        Areas of Concern, and Recommendations. Use bullet points or numbered lists
+        where appropriate and do not ask the user any questions.
         """
 
         try:
-            explanation = summarize_credit_profile(summary_prompt)
+            explanation_raw = summarize_credit_profile(summary_prompt)
+            explanation = strip_questions(explanation_raw)
         except Exception as e:
             explanation = f"LLM summary failed: {str(e)}"
 
