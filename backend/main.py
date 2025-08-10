@@ -10,6 +10,7 @@ from validators import evaluate_rules
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.llm.service import summarize_credit_profile, llm
+from src.recommendations.service import recommend_products
 
 load_dotenv()
 
@@ -171,20 +172,9 @@ def score_credit(input: CreditInput):
 
 @app.post("/similar_products")
 def similar_products(query: QueryDescription):
+    """Return credit card recommendations based on a free-text description."""
     try:
-        prompt = (
-            f"Customer description: {query.description}\n"
-            "Suggest three relevant credit card products in JSON format with 'title' and 'description'."
-        )
-        response = llm.invoke(
-            [
-                SystemMessage(
-                    content="You are a helpful financial assistant recommending credit card products."
-                ),
-                HumanMessage(content=prompt),
-            ]
-        )
-        suggestions = response.content.strip()
+        suggestions = recommend_products(query.description)
         return {"results": suggestions}
     except Exception as e:
-        return {"error": f"Text generation failed: {str(e)}"}
+        return {"error": f"Product recommendation failed: {str(e)}"}

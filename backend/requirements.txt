@@ -8,3 +8,4 @@ botocore
 sagemaker
 faker
 langchain-aws
+scikit-learn
