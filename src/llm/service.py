@@ -23,7 +23,10 @@ def summarize_credit_profile(prompt: str) -> str:
         SystemMessage(
             content=(
                 "You are a credit analyst helping users understand their credit risk "
-                "briefly and clearly."
+                "briefly and clearly. Provide a well-structured markdown report with "
+                "headings for Summary, Key Strengths, Areas of Concern, and Recommendations. "
+                "Use bullet points or numbered lists for readability and do not ask the "
+                "user any questions."
             )
         ),
         HumanMessage(content=prompt),
