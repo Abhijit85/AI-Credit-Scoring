@@ -1,0 +1,32 @@
+[
+  {
+    "policy_id": "young-saver-v3",
+    "title": "Thin-file young applicants",
+    "text": "Applicants under 25 with a short credit history age may be approved for entry-level products when income is stable and credit utilization is below 30%. A thin credit file alone is not grounds for decline; weight stable income and low delinquency more heavily than history length."
+  },
+  {
+    "policy_id": "utilization-v2",
+    "title": "Credit utilization thresholds",
+    "text": "Credit utilization above 35% is a concern and above 60% is a strong negative signal. Recommend utilization be reduced below 30%. Sustained high utilization with delayed payments should move a decision from Approve to Review."
+  },
+  {
+    "policy_id": "delinquency-v2",
+    "title": "Delayed payment handling",
+    "text": "Up to two delayed payments may be tolerated for otherwise strong profiles. Three or more delayed payments require review and a recommendation to enable auto-pay. Recent delinquency is weighted more heavily than older delinquency."
+  },
+  {
+    "policy_id": "debt-load-v1",
+    "title": "Outstanding debt and DTI",
+    "text": "Outstanding debt above 5,000 with high EMI relative to monthly in-hand salary indicates elevated debt-to-income. Recommend loan consolidation. Combine with utilization and delinquency signals before declining."
+  },
+  {
+    "policy_id": "income-stability-v1",
+    "title": "Income stability offset",
+    "text": "Stable annual income and consistent monthly in-hand salary can offset a thin credit file or a single delinquency. Salaried occupations with predictable income are lower risk than variable-income profiles at the same score."
+  },
+  {
+    "policy_id": "fraud-signal-v1",
+    "title": "Anomaly and fraud signals",
+    "text": "An anomaly score from the fraud service above threshold overrides a favorable credit score and routes the application to manual review. Mismatched identifiers or improbable income for occupation should be flagged, not auto-declined."
+  }
+]

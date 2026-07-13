@@ -1,9 +1,16 @@
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 from langchain_aws import ChatBedrock
 from langchain_core.messages import HumanMessage, SystemMessage
 
-load_dotenv()
+_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(_ROOT / ".env")
+load_dotenv(_ROOT / "backend" / ".env", override=True)
+
+if os.getenv("AWS_PROFILE") == "":
+    os.environ.pop("AWS_PROFILE", None)
 
 llm = ChatBedrock(
     model=os.getenv(

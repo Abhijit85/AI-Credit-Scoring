@@ -1,11 +1,22 @@
 fastapi
 uvicorn
 boto3
+botocore
 pydantic
 python-dotenv
+pymongo
 awscli
-botocore
 sagemaker
 faker
 langchain-aws
 scikit-learn
+numpy
+
+# --- New for the agentic rebuild (optional at runtime; graceful fallbacks) ---
+voyageai<0.5        # primary embedding provider; keep compatible with langchain-aws 0.2.x
+# bedrock-agentcore # AgentCore short-term session memory (install when available)
+# mcp               # MongoDB MCP server (scripts/mcp_server.py)
+
+# --- Dev / test ---
+pytest
+httpx               # FastAPI TestClient
